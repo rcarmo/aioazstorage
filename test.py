@@ -13,11 +13,11 @@ STORAGE_KEY=environ['STORAGE_KEY']
 async def main():
     t = StorageClient(STORAGE_ACCOUNT, STORAGE_KEY)
     #print(await t.deleteTable('aiotest'))
-    #print(await t.createTable('aiotest'))
+    print(await t.createTable('aiotest'))
     async for item in t.getTables({"$filter": "TableName eq 'aiotest'"}):
         print(item)
     for i in range(10):
-        print(await t.insertEntity('aiotest', {  
+        res = await t.insertEntity('aiotest', {  
             "Address":"Mountain View",
             "Age":23 + i,  
             "AmountDue":200.23,  
@@ -28,7 +28,8 @@ async def main():
             "NumberOfOrders": 255,
             "PartitionKey":"mypartitionkey",  
             "RowKey": "Customer%d" % i
-        }))
+        })
+        print(res)
     await t.close()
 
 if __name__ == '__main__':

@@ -8,7 +8,7 @@ from hashlib import sha256, md5
 from hmac import HMAC
 from time import time, mktime
 from urllib.parse import urlencode, quote_plus, quote
-from uuid import uuid1
+from uuid import uuid1, UUID
 try:
     from ujson import dumps
 except ImportError:
@@ -17,17 +17,20 @@ except ImportError:
 
 _edm_types = {
     datetime: "Edm.DateTime",
-    int: "Edm.Int64"
+    int: "Edm.Int64",
+    UUID: "Edm.Guid"
 }
 
 _edm_formatters = {
     datetime: lambda d: d.utcnow().isoformat(),
-    int: lambda d: str(d)
+    int: lambda d: str(d),
+    UUID: lambda d: str(d)
 }
 
 _edm_parsers = {
     "Edm.DateTime": lambda d: parse(d),
-    "Edm.Int64": lambda d: int(d)
+    "Edm.Int64": lambda d: int(d),
+    "Edm.Guid": lambda d: UUID(d)
 }
 
 
