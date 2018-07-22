@@ -10,6 +10,8 @@ This is _an intentionally low-level wrapper_, and meant largely for my own consu
 
 However, pull requests are welcome.
 
+## Features
+
 * [ ] queue item creation/handling
 * [ ] queue creation/deletion/querying
 * [ ] table entry creation/deletion/querying
