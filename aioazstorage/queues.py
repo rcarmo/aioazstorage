@@ -9,30 +9,11 @@ from hmac import HMAC
 from time import time, mktime
 from urllib.parse import urlencode, quote_plus, quote
 from uuid import uuid1, UUID
+from xml.etree import ElementTree
 try:
     from ujson import dumps, loads
 except ImportError:
     from json import dumps, loads
-
-
-_edm_types = {
-    datetime: "Edm.DateTime",
-    int: "Edm.Int64",
-    UUID: "Edm.Guid"
-}
-
-_edm_formatters = {
-    datetime: lambda d: d.utcnow().isoformat(),
-    int: lambda d: str(d),
-    UUID: lambda d: str(d)
-}
-
-_edm_parsers = {
-    "Edm.DateTime": lambda d: parse(d),
-    "Edm.Int64": lambda d: int(d),
-    "Edm.Guid": lambda d: UUID(d)
-}
-
 
 class QueueClient:
     account = None
@@ -59,8 +40,7 @@ class QueueClient:
         return {
             'x-ms-date': date,
             'x-ms-version': '2018-03-28',
-            'Content-Type': 'text/plain; charset=UTF-8',
-            'Accept': 'application/json;odata=nometadata',
+            'Content-Type': 'text/plain; charset=UTF-8'
         }
 
 
@@ -111,3 +91,24 @@ class QueueClient:
             uri = base_uri
         payload=self._annotate_payload(payload)
         return await self.session.post(uri, headers=self._sign_for_queues("POST", canon, payload), data=payload)
+        # TODO: handle receipts
+    
+    async def getMessages(self, queue, visibilitytimeout=None, numofmessages=None):
+        """Retrieve messages"""
+        canon = '/{}/{}/messages'.format(self.account, queue)
+        base_uri = 'https://{}.queue.core.windows.net/{}/messages'.format(self.account, queue)
+        query = {}
+        if visibilitytimeout:
+            query['visibilitytimeout'] = visibilitytimeout
+        if numofmessages:
+            query['numofmessages'] = numofmessages
+        if len(query.keys()):
+            uri = base_uri + '?' + urlencode(query)
+        else:
+            uri = base_uri
+        res = await self.session.get(uri, headers=self._sign_for_queues("GET", canon))
+        # TODO: parse 
+        if res.status == 200:
+            root = ElementTree.fromstring(await res.text())
+            print(root)
+        return res

@@ -20,6 +20,10 @@ async def main():
     for i in range(10):
         res = await q.putMessage('aiotest', 'hello world')
         print(res.status, end=" ")
+    print("\nRetrieval", end=" ")
+    for i in range(10):
+        res = await q.getMessages('aiotest')
+        print(await res.text())
     #print("Queue Deletion", end=" ")
     #print((await t.deleteQueue('aiotest')).status)
     await q.close()
