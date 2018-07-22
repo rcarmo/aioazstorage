@@ -16,6 +16,7 @@ async def main():
     print(await t.createTable('aiotest'))
     async for item in t.getTables({"$filter": "TableName eq 'aiotest'"}):
         print(item)
+    print("Insertion", end=" ")
     for i in range(10):
         res = await t.insertEntity('aiotest', {  
             "Address":"Mountain View",
@@ -29,9 +30,17 @@ async def main():
             "PartitionKey":"mypartitionkey",  
             "RowKey": "Customer%d" % i
         })
-        print(res.headers)
+        print(res.status, end=" ")
+    print("\nDeletion")
     for i in range(10):
-        res = await t.updateEntity('aiotest', {  
+        res = await t.deleteEntity('aiotest', {  
+            "PartitionKey":"mypartitionkey",  
+            "RowKey": "Customer%d" % i
+        })
+        print(res.status, end=" ")
+    print("\nUpsert")
+    for i in range(10):
+        res = await t.insertOrReplaceEntity('aiotest', {  
             "Address":"Mountain View",
             "Age": 23 - i,  
             "AmountDue": 0,  
@@ -43,7 +52,11 @@ async def main():
             "PartitionKey":"mypartitionkey",  
             "RowKey": "Customer%d" % i
         })
-        print(res)
+        print(res.status, end=" ")
+    print("\nQuery")
+    async for item in t.queryEntities('aiotest', {"$filter": "Age gt 0"}):
+        print(item['RowKey'], end= " ")
+    print()
     await t.close()
 
 if __name__ == '__main__':

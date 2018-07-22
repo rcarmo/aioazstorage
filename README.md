@@ -12,7 +12,7 @@ This is _an intentionally low-level wrapper_, and meant largely for my own consu
 
 * [ ] queue item creation/handling
 * [ ] queue creation/deletion/querying
-* [ ] table entry creation/updating/deletion/querying (with EDM annotation of supported types) - in progress
+* [x] table entry creation/updating/deletion/querying (with EDM annotation of supported types)
 * [x] table creation/deletion/querying
 
 ## Requirements

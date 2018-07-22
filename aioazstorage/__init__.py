@@ -62,7 +62,7 @@ class StorageClient:
             'Content-Type': 'application/json',
             'Accept': 'application/json;odata=nometadata', # we want lean replies for faster handling
             'Prefer': 'return-no-content',
-            'x-ms-client-request-id': str(uuid1()) # optional, but useful for debugging
+            'x-ms-client-request-id': str(uuid1()), # optional, but useful for debugging
         }
 
 
@@ -138,12 +138,45 @@ class StorageClient:
         return payload
 
 
+
+    async def queryEntities(self, table, query={}):
+        """Generator for enumerating entities, with optional OData query"""
+
+        canon = '/{}/{}()'.format(self.account, table)
+        base_uri = 'https://{}.table.core.windows.net/{}()'.format(self.account, table)
+        continuation = ['NextPartitionKey', 'NextRowKey']
+        while True:
+            if len(query.keys()):
+                uri = base_uri + '?' + urlencode(query)
+            else:
+                uri = base_uri
+            async with self.session.get(uri, headers=self._sign_for_tables(canon)) as resp:
+                if resp.status == 200:
+                    for item in (await resp.json(loads=loads))['value']:
+                        yield item
+                    cont = {k: resp.headers.get('x-ms-continuation-%s' % k, None) for k in continuation}
+                    if not len(list(filter(lambda x: x is not None, cont.values()))):
+                        return
+                    else:
+                        query.update(cont)
+                else:
+                    return
+
+
     async def insertEntity(self, table, entity={}):
         """Create a new entity"""
         canon = '/{}/{}'.format(self.account, table)
         uri = 'https://{}.table.core.windows.net/{}'.format(self.account, table)
         payload = dumps(self._annotate_payload(entity))
         return await self.session.post(uri, headers=self._sign_for_tables(canon, payload), data=payload)
+
+
+    async def insertOrReplaceEntity(self, table, entity={}):
+        """Inserts or Replaces an entity"""
+        canon = "/{}/{}(PartitionKey='{}',RowKey='{}')".format(self.account, table, entity['PartitionKey'], entity['RowKey'])
+        uri = "https://{}.table.core.windows.net/{}(PartitionKey='{}',RowKey='{}')".format(self.account, table, entity['PartitionKey'], entity['RowKey'])
+        payload = dumps(self._annotate_payload(entity))
+        return await self.session.put(uri, headers=self._sign_for_tables(canon, payload), data=payload)
 
 
     async def updateEntity(self, table, entity={}, etag=None):
@@ -156,3 +189,23 @@ class StorageClient:
             **self._sign_for_tables(canon, payload)
         }
         return await self.session.put(uri, headers=headers, data=payload)
+
+
+    async def mergeEntity(self, table, entity={}, etag=None):
+        """not implemented"""
+        raise NotImplementedError("aiohttp does not support MERGE")
+
+    async def insertOrMergeEntity(self, table, entity={}, etag=None):
+        """not implemented"""
+        raise NotImplementedError("aiohttp does not support MERGE")
+
+
+    async def deleteEntity(self, table, entity={}, etag=None):
+        """Delete an entity"""
+        canon = "/{}/{}(PartitionKey='{}',RowKey='{}')".format(self.account, table, entity['PartitionKey'], entity['RowKey'])
+        uri = "https://{}.table.core.windows.net/{}(PartitionKey='{}',RowKey='{}')".format(self.account, table, entity['PartitionKey'], entity['RowKey'])
+        headers = {
+            'If-Match': '*' if not etag else etag,
+            **self._sign_for_tables(canon)
+        }
+        return await self.session.delete(uri, headers=headers)
