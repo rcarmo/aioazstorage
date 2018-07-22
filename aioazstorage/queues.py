@@ -108,7 +108,7 @@ class QueueClient:
 
 
     async def deleteMessage(self, queue, messageid, popreceipt):
-        """Queue a message"""
+        """Delete a message"""
         canon = '/{}/{}/messages/{}'.format(self.account, queue, messageid)
         base_uri = 'https://{}.queue.core.windows.net/{}/messages/{}'.format(self.account, queue, messageid)
         query = {'popreceipt': popreceipt}
