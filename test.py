@@ -1,5 +1,5 @@
 from asyncio import get_event_loop
-from aioazstorage import StorageClient
+from aioazstorage import TableClient
 from os import environ
 from datetime import datetime
 from uuid import uuid1
@@ -11,12 +11,15 @@ STORAGE_ACCOUNT=environ['STORAGE_ACCOUNT']
 STORAGE_KEY=environ['STORAGE_KEY']
 
 async def main():
-    t = StorageClient(STORAGE_ACCOUNT, STORAGE_KEY)
-    #print(await t.deleteTable('aiotest'))
-    print(await t.createTable('aiotest'))
+    t = TableClient(STORAGE_ACCOUNT, STORAGE_KEY)
+    #print("Table Deletion", end=" ")
+    #print((await t.deleteTable('aiotest')).status)
+    print("Table Creation", end=" ")
+    print((await t.createTable('aiotest')).status)
+    print("Table Query", end=" ")
     async for item in t.getTables({"$filter": "TableName eq 'aiotest'"}):
-        print(item)
-    print("Insertion", end=" ")
+        print(item['TableName'], end=" ")
+    print("\nInsertion", end=" ")
     for i in range(10):
         res = await t.insertEntity('aiotest', {  
             "Address":"Mountain View",

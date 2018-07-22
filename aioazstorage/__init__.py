@@ -34,13 +34,13 @@ _edm_parsers = {
 }
 
 
-class StorageClient:
+class TableClient:
     account = None
     auth = None
     session = None
 
     def __init__(self, account, auth=None, session=None):
-        """Create a StorageClient instance"""
+        """Create a TableClient instance"""
 
         self.account = account
         self.auth = b64decode(auth)
