@@ -70,12 +70,6 @@ class QueueClient:
         return await self.session.delete(uri, headers=self._sign_for_queues("DELETE", canon))
 
 
-    def _annotate_payload(self, payload):
-        return "<QueueMessage><MessageText>{}</MessageText></QueueMessage>".format(payload)
-
-    def _parse_payload(self, payload):
-        pass
-
     async def putMessage(self, queue, payload, visibilitytimeout=None, messagettl=None):
         """Queue a message"""
         canon = '/{}/{}/messages'.format(self.account, queue)
@@ -89,7 +83,7 @@ class QueueClient:
             uri = base_uri + '?' + urlencode(query)
         else:
             uri = base_uri
-        payload=self._annotate_payload(payload)
+        payload="<QueueMessage><MessageText>{}</MessageText></QueueMessage>".format(payload)
         return await self.session.post(uri, headers=self._sign_for_queues("POST", canon, payload), data=payload)
         # TODO: handle receipts
     
@@ -108,7 +102,6 @@ class QueueClient:
         else:
             uri = base_uri
         res = await self.session.get(uri, headers=self._sign_for_queues("GET", canon))
-        # TODO: parse 
         if res.status == 200:
             for msg in ElementTree.fromstring(await res.text()):
                 yield {m.tag: m.text for m in msg}
@@ -118,8 +111,6 @@ class QueueClient:
         """Queue a message"""
         canon = '/{}/{}/messages/{}'.format(self.account, queue, messageid)
         base_uri = 'https://{}.queue.core.windows.net/{}/messages/{}'.format(self.account, queue, messageid)
-        query = {
-            'popreceipt': popreceipt
-        }
+        query = {'popreceipt': popreceipt}
         uri = base_uri + '?' + urlencode(query)
         return await self.session.delete(uri, headers=self._sign_for_queues("DELETE", canon))
