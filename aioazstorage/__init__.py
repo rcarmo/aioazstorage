@@ -10,9 +10,9 @@ from time import time, mktime
 from urllib.parse import urlencode, quote_plus, quote
 from uuid import uuid1, UUID
 try:
-    from ujson import dumps
+    from ujson import dumps, loads
 except ImportError:
-    from json import dumps
+    from json import dumps, loads
 
 
 _edm_types = {
@@ -40,12 +40,12 @@ class StorageClient:
     session = None
 
     def __init__(self, account, auth=None, session=None):
-        """Create a StorageClient client"""
+        """Create a StorageClient instance"""
 
         self.account = account
         self.auth = b64decode(auth)
         if session is None:
-            session = ClientSession()
+            session = ClientSession(json_serialize=dumps)
         self.session = session
 
     async def close(self):
@@ -91,7 +91,7 @@ class StorageClient:
                 uri = base_uri
             async with self.session.get(uri, headers=self._sign_for_tables(canon)) as resp:
                 if resp.status == 200:
-                    for item in (await resp.json())['value']:
+                    for item in (await resp.json(loads=loads))['value']:
                         yield item
                     cont = resp.headers.get('x-ms-continuation-%s' % continuation, None)
                     if not cont:
