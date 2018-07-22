@@ -93,6 +93,7 @@ class QueueClient:
         return await self.session.post(uri, headers=self._sign_for_queues("POST", canon, payload), data=payload)
         # TODO: handle receipts
     
+
     async def getMessages(self, queue, visibilitytimeout=None, numofmessages=None):
         """Retrieve messages"""
         canon = '/{}/{}/messages'.format(self.account, queue)
@@ -109,6 +110,16 @@ class QueueClient:
         res = await self.session.get(uri, headers=self._sign_for_queues("GET", canon))
         # TODO: parse 
         if res.status == 200:
-            root = ElementTree.fromstring(await res.text())
-            print(root)
-        return res
+            for msg in ElementTree.fromstring(await res.text()):
+                yield {m.tag: m.text for m in msg}
+
+
+    async def deleteMessage(self, queue, messageid, popreceipt):
+        """Queue a message"""
+        canon = '/{}/{}/messages/{}'.format(self.account, queue, messageid)
+        base_uri = 'https://{}.queue.core.windows.net/{}/messages/{}'.format(self.account, queue, messageid)
+        query = {
+            'popreceipt': popreceipt
+        }
+        uri = base_uri + '?' + urlencode(query)
+        return await self.session.delete(uri, headers=self._sign_for_queues("DELETE", canon))

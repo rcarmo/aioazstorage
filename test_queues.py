@@ -21,11 +21,16 @@ async def main():
         res = await q.putMessage('aiotest', 'hello world')
         print(res.status, end=" ")
     print("\nRetrieval", end=" ")
+    receipts = []
     for i in range(10):
-        res = await q.getMessages('aiotest')
-        print(await res.text())
-    #print("Queue Deletion", end=" ")
-    #print((await t.deleteQueue('aiotest')).status)
+        async for msg in q.getMessages('aiotest', numofmessages=2):
+            receipts.append((msg['MessageId'], msg['PopReceipt']))
+            print(msg['MessageText'], end=" ")
+    print("\nDeletion", end=" ")
+    for r in receipts:
+        res = await q.deleteMessage('aiotest', *r)
+        print(res.status, end=" ")
+    print()
     await q.close()
 
 if __name__ == '__main__':

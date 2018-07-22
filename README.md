@@ -10,7 +10,10 @@ This is _an intentionally low-level wrapper_, and meant largely for my own consu
 
 ## Features
 
-* [ ] queue item creation/handling
+* [ ] queue metadata
+* [ ] advanced message semantics (including queueing status codes)
+* [ ] message peek/clear/update
+* [x] message queueing/retrieval/deletion
 * [x] queue creation/deletion
 * [x] table entry creation/updating/deletion/querying (with EDM annotation of supported types)
 * [x] table creation/deletion/querying
