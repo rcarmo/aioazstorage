@@ -1,8 +1,11 @@
-from asyncio import get_event_loop
 from aioazstorage import TableClient
 from os import environ
 from datetime import datetime
 from uuid import uuid1
+try:
+    from uvloop import get_event_loop
+except ImportError:
+    from asyncio import get_event_loop
 
 # TODO: add SAS token support, reference:
 # https://github.com/yokawasa/azure-functions-python-samples/blob/master/blob-sas-token-generator/function/run.py
@@ -17,7 +20,7 @@ async def main():
     print("Table Creation", end=" ")
     print((await t.createTable('aiotest')).status)
     print("Table Query", end=" ")
-    async for item in t.queryTables({"$filter": "TableName eq 'aiotest'"}):
+    async for item in t.getTables({"$filter": "TableName eq 'aiotest'"}):
         print(item['TableName'], end=" ")
     print("\nInsertion", end=" ")
     for i in range(10):

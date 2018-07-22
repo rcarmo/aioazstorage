@@ -23,3 +23,4 @@ This is _an intentionally low-level wrapper_, and meant largely for my own consu
 * Python 3.6
 * `aiohttp`
 * `ujson` (optional)
+* `uvloop` (optional)
