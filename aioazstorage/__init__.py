@@ -144,3 +144,15 @@ class StorageClient:
         uri = 'https://{}.table.core.windows.net/{}'.format(self.account, table)
         payload = dumps(self._annotate_payload(entity))
         return await self.session.post(uri, headers=self._sign_for_tables(canon, payload), data=payload)
+
+
+    async def updateEntity(self, table, entity={}, etag=None):
+        """Update an entity"""
+        canon = "/{}/{}(PartitionKey='{}',RowKey='{}')".format(self.account, table, entity['PartitionKey'], entity['RowKey'])
+        uri = "https://{}.table.core.windows.net/{}(PartitionKey='{}',RowKey='{}')".format(self.account, table, entity['PartitionKey'], entity['RowKey'])
+        payload = dumps(self._annotate_payload(entity))
+        headers = {
+            'If-Match': '*' if not etag else etag,
+            **self._sign_for_tables(canon, payload)
+        }
+        return await self.session.put(uri, headers=headers, data=payload)

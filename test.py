@@ -21,11 +21,25 @@ async def main():
             "Address":"Mountain View",
             "Age":23 + i,  
             "AmountDue":200.23,  
-            "CustomerCode": str(uuid1()),
+            "CustomerCode": str(uuid1()), # send this as string intentionally
             "CustomerSince@odata.type": "Edm.DateTime",  
             "CustomerSince":datetime.now(),
             "IsActive": True,  
             "NumberOfOrders": 255,
+            "PartitionKey":"mypartitionkey",  
+            "RowKey": "Customer%d" % i
+        })
+        print(res.headers)
+    for i in range(10):
+        res = await t.updateEntity('aiotest', {  
+            "Address":"Mountain View",
+            "Age": 23 - i,  
+            "AmountDue": 0,  
+            "CustomerCode": uuid1(), # this updates the entry schema as well
+            "CustomerSince@odata.type": "Edm.DateTime",  
+            "CustomerSince":datetime.now(),
+            "IsActive": True,  
+            "NumberOfOrders": 0,
             "PartitionKey":"mypartitionkey",  
             "RowKey": "Customer%d" % i
         })
