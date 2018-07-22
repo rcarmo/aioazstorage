@@ -17,7 +17,7 @@ async def main():
     print("Table Creation", end=" ")
     print((await t.createTable('aiotest')).status)
     print("Table Query", end=" ")
-    async for item in t.getTables({"$filter": "TableName eq 'aiotest'"}):
+    async for item in t.queryTables({"$filter": "TableName eq 'aiotest'"}):
         print(item['TableName'], end=" ")
     print("\nInsertion", end=" ")
     for i in range(10):
