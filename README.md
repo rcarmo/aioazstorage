@@ -16,7 +16,7 @@ This is _an intentionally low-level wrapper_, and meant largely for my own consu
 * [ ] message peek/clear/update
 * [x] message queueing/retrieval/deletion
 * [x] queue creation/deletion
-* [ ] batch operations
+* [x] batch operations (batch update implemented, result parsing not yet)
 * [x] table entry creation/updating/deletion/querying (with EDM annotation of supported types)
 * [x] table creation/deletion/querying
 

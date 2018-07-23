@@ -34,7 +34,6 @@ async def main():
             "Age":23 + i,  
             "AmountDue":200.23,  
             "CustomerCode": str(uuid1()), # send this as string intentionally
-            "CustomerSince@odata.type": "Edm.DateTime",  
             "CustomerSince":datetime.now(),
             "IsActive": True,  
             "NumberOfOrders": 255,
@@ -66,7 +65,6 @@ async def main():
             "Age": 23 - i,  
             "AmountDue": 0,  
             "CustomerCode": uuid1(), # this updates the entry schema as well
-            "CustomerSince@odata.type": "Edm.DateTime",  
             "CustomerSince":datetime.now(),
             "IsActive": True,  
             "NumberOfOrders": 0,
@@ -82,7 +80,31 @@ async def main():
     async for item in t.queryEntities('aiotest', {"$filter": "Age gt 0"}):
         print(item['RowKey'], end= " ")
     print()
+
+    entities = []
+    for i in range(OPERATION_COUNT):
+        entities.append({  
+            "Address":"Mountain View",
+            "Age":23 + i,  
+            "AmountDue":200.23,  
+            "CustomerCode": str(uuid1()), # send this as string intentionally
+            "CustomerSince@odata.type": "Edm.DateTime",  
+            "CustomerSince":datetime.now(),
+            "IsActive": True,  
+            "NumberOfOrders": 255,
+            "PartitionKey":"mypartitionkey",  
+            "RowKey": "Customer%d" % i
+        })
+    start = time()
+    res = await t.batchUpdate('aiotest', entities)
+    print("{} operations/s".format(OPERATION_COUNT/(time()-start)))
+    print(res.status)
+    print(res.headers)
+    print(await res.text())
+
+    print()
     await t.close()
+
 
 if __name__ == '__main__':
     loop = get_event_loop()

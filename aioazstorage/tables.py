@@ -211,12 +211,13 @@ class TableClient:
         }
         return await self.session.delete(uri, headers=headers)
 
+
     async def batchUpdate(self, table, entities=[]):
         """Update a set of entities"""
-        canon = "/{}/$batch')".format(self.account)
-        uri = "https://{}.table.core.windows.net/$batch)".format(self.account)
+        canon = "/{}/$batch".format(self.account)
+        uri = "https://{}.table.core.windows.net/$batch".format(self.account)
         batch_boundary = '--batch_{}'.format(str(uuid1()))
-        changeset_boundary = '--changeset_{}'.format(str(uuid11))
+        changeset_boundary = '--changeset_{}'.format(str(uuid1()))
 
         changesets = [
             batch_boundary,
@@ -234,15 +235,15 @@ class TableClient:
                 'Accept: application/json;odata=nometadata',
                 'Prefer: return-no-content',
                 '',
-                dumps(entity),
+                dumps(self._annotate_payload(entity)),
                 changeset_boundary
             ])
+        changesets.append(batch_boundary)
         payload = '\n'.join(changesets)
         headers = {
-            'If-Match': '*' if not etag else etag,
             **self._sign_for_tables(canon),
-            'Content-Yype': 'multipart/mixed; boundary={}'.format(batch_boundary)[2:],
-            'Content-Length': len(payload)
+            'Content-Type': 'multipart/mixed; boundary={}'.format(batch_boundary[2:]),
+            'Content-Length': str(len(payload)),
+            'Accept-Charset': 'UTF-8'
         }
-        print(headers)
-        return await self.session.post(uri, headers=headers)
+        return await self.session.post(uri, headers=headers, data=payload)

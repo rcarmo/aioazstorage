@@ -23,7 +23,7 @@ async def main():
     #print((await tq.deleteTable('aiotest')).status)
     print("Queue Creation", end=" ")
     print((await q.createQueue('aiotest')).status)
-    print("\nInsertion:", end=" ")
+    print("\nInsertion:")
     tasks = []
     for _ in range(OPERATION_COUNT):
         tasks.append(Task(q.putMessage('aiotest', 'hello world')))
@@ -32,14 +32,14 @@ async def main():
     print("{} operations/s".format(OPERATION_COUNT/(time()-start)))
     #print([r.status for r in res])
 
-    print("Retrieval:", end=" ")
+    print("Retrieval:")
     receipts = []
     start = time()
     for i in range(int(OPERATION_COUNT/32)+1):
         async for msg in q.getMessages('aiotest', numofmessages=32):
             receipts.append((msg['MessageId'], msg['PopReceipt']))
     print("{} operations/s".format(OPERATION_COUNT/(time()-start)))    
-    print("Deletion", end=" ")
+    print("Deletion:")
     tasks = []
     for r in receipts:
         tasks.append(Task(q.deleteMessage('aiotest', *r)))
