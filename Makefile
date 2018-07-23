@@ -5,5 +5,8 @@ STORAGE_KEY=<fill this in too>
 -include .env
 
 # Run tests
-test:
+tables:
 	python -u test_tables.py
+
+queues:
+	python -u test_queues.py
