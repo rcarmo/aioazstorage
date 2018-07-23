@@ -2,8 +2,11 @@ from aioazstorage import TableClient
 from os import environ
 from datetime import datetime
 from uuid import uuid1
+from time import time
+from asyncio import set_event_loop_policy, Task, gather
 try:
-    from uvloop import get_event_loop
+    from uvloop import get_event_loop, EventLoopPolicy
+    set_event_loop_policy(EventLoopPolicy())
 except ImportError:
     from asyncio import get_event_loop
 
@@ -12,6 +15,7 @@ except ImportError:
 
 STORAGE_ACCOUNT=environ['STORAGE_ACCOUNT']
 STORAGE_KEY=environ['STORAGE_KEY']
+OPERATION_COUNT=int(environ.get('OPERATION_COUNT',100))
 
 async def main():
     t = TableClient(STORAGE_ACCOUNT, STORAGE_KEY)
@@ -22,9 +26,10 @@ async def main():
     print("Table Query", end=" ")
     async for item in t.getTables({"$filter": "TableName eq 'aiotest'"}):
         print(item['TableName'], end=" ")
-    print("\nInsertion", end=" ")
-    for i in range(10):
-        res = await t.insertEntity('aiotest', {  
+    print("\nInsertion:", end=" ")
+    tasks = []
+    for i in range(OPERATION_COUNT):
+        tasks.append(Task(t.insertEntity('aiotest', {  
             "Address":"Mountain View",
             "Age":23 + i,  
             "AmountDue":200.23,  
@@ -35,18 +40,28 @@ async def main():
             "NumberOfOrders": 255,
             "PartitionKey":"mypartitionkey",  
             "RowKey": "Customer%d" % i
-        })
-        print(res.status, end=" ")
-    print("\nDeletion")
-    for i in range(10):
-        res = await t.deleteEntity('aiotest', {  
+        })))
+    start = time()
+    res = await gather(*tasks)
+    print("{} operations/s".format(OPERATION_COUNT/(time()-start)))
+    #print([r.status for r in res])
+
+    print("Deletion:")
+    tasks = []
+    for i in range(OPERATION_COUNT):
+        tasks.append(Task(t.deleteEntity('aiotest', {  
             "PartitionKey":"mypartitionkey",  
             "RowKey": "Customer%d" % i
-        })
-        print(res.status, end=" ")
-    print("\nUpsert")
-    for i in range(10):
-        res = await t.insertOrReplaceEntity('aiotest', {  
+        })))
+    start = time()
+    res = await gather(*tasks)
+    print("{} operations/s".format(OPERATION_COUNT/(time()-start)))
+    #print([r.status for r in res])
+
+    print("Upsert:")
+    tasks = []
+    for i in range(OPERATION_COUNT):
+        tasks.append(Task(t.insertOrReplaceEntity('aiotest', {  
             "Address":"Mountain View",
             "Age": 23 - i,  
             "AmountDue": 0,  
@@ -57,9 +72,13 @@ async def main():
             "NumberOfOrders": 0,
             "PartitionKey":"mypartitionkey",  
             "RowKey": "Customer%d" % i
-        })
-        print(res.status, end=" ")
-    print("\nQuery")
+        })))
+    start = time()
+    res = await gather(*tasks)
+    print("{} operations/s".format(OPERATION_COUNT/(time()-start)))
+    #print([r.status for r in res])
+
+    print("Query")
     async for item in t.queryEntities('aiotest', {"$filter": "Age gt 0"}):
         print(item['RowKey'], end= " ")
     print()

@@ -40,7 +40,8 @@ class QueueClient:
         return {
             'x-ms-date': date,
             'x-ms-version': '2018-03-28',
-            'Content-Type': 'text/plain; charset=UTF-8'
+            'Content-Type': 'text/plain; charset=UTF-8',
+            'Connection': 'Keep-Alive'
         }
 
 

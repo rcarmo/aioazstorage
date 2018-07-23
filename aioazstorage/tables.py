@@ -63,6 +63,7 @@ class TableClient:
             'Accept': 'application/json;odata=nometadata', # we want lean replies for faster handling
             'Prefer': 'return-no-content',
             'x-ms-client-request-id': str(uuid1()), # optional, but useful for debugging
+            'Connection': 'Keep-Alive'
         }
 
 
@@ -209,3 +210,39 @@ class TableClient:
             **self._sign_for_tables(canon)
         }
         return await self.session.delete(uri, headers=headers)
+
+    async def batchUpdate(self, table, entities=[]):
+        """Update a set of entities"""
+        canon = "/{}/$batch')".format(self.account)
+        uri = "https://{}.table.core.windows.net/$batch)".format(self.account)
+        batch_boundary = '--batch_{}'.format(str(uuid1()))
+        changeset_boundary = '--changeset_{}'.format(str(uuid11))
+
+        changesets = [
+            batch_boundary,
+            'Content-Type: multipart/mixed; boundary={}'.format(changeset_boundary),
+            '',
+            changeset_boundary,
+        ]
+        for entity in entities:
+            changesets.extend([
+                'Content-Type: application/http',
+                'Content-Transfer-Encoding: binary',
+                '',
+                'POST https://{}.table.core.windows.net/{} HTTP/1.1'.format(self.account, table),
+                'Content-Type: application/json',
+                'Accept: application/json;odata=nometadata',
+                'Prefer: return-no-content',
+                '',
+                dumps(entity),
+                changeset_boundary
+            ])
+        payload = '\n'.join(changesets)
+        headers = {
+            'If-Match': '*' if not etag else etag,
+            **self._sign_for_tables(canon),
+            'Content-Yype': 'multipart/mixed; boundary={}'.format(batch_boundary)[2:],
+            'Content-Length': len(payload)
+        }
+        print(headers)
+        return await self.session.post(uri, headers=headers)

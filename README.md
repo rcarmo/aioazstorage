@@ -8,8 +8,9 @@ I wanted a low-latency `asyncio` library for accessing Azure Storage via persist
 
 This is _an intentionally low-level wrapper_, and meant largely for my own consumption. However, pull requests are welcome.
 
-## Features
+## Features/Roadmap
 
+* [ ] SAS Token support
 * [ ] queue metadata
 * [ ] advanced message semantics (including queueing status codes)
 * [ ] message peek/clear/update

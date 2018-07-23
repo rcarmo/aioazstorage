@@ -6,4 +6,4 @@ STORAGE_KEY=<fill this in too>
 
 # Run tests
 test:
-	python -u test_queues.py
+	python -u test_tables.py
