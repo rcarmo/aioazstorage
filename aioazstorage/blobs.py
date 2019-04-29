@@ -15,13 +15,13 @@ try:
 except ImportError:
     from json import dumps, loads
 
-class QueueClient:
+class BlobClient:
     account = None
     auth = None
     session = None
 
     def __init__(self, account, auth=None, session=None):
-        """Create a QueueClient instance"""
+        """Create a BlobClient instance"""
 
         self.account = account
         self.auth = b64decode(auth)
@@ -45,7 +45,7 @@ class QueueClient:
         }
 
 
-    def _sign_for_queues(self, verb, canonicalized, payload=''):
+    def _sign_for_blobs(self, verb, canonicalized, payload=''):
         """Compute SharedKeyLite authorization header and add standard headers"""
         headers = self._headers()
         signing_headers = filter(lambda x: 'x-ms' in x, headers.keys())
@@ -58,23 +58,29 @@ class QueueClient:
             **headers
         }
 
-    async def createQueue(self, name):
-        """Create a new queue"""
+    async def createContainer(self, name):
+        """Create a new Container"""
         canon = '/{}/{}'.format(self.account, name)
-        uri = 'https://{}.queue.core.windows.net/{}'.format(self.account, name)
-        return await self.session.put(uri, headers=self._sign_for_queues("PUT", canon))
+        uri = 'https://{}.blob.core.windows.net/{}?restype=container'.format(self.account, name)
+        return await self.session.put(uri, headers=self._sign_for_blobs("PUT", canon))
 
-
-    async def deleteQueue(self, name):
+    async def deleteContainer(self, name):
         canon = '/{}/{}'.format(self.account, name)
-        uri = 'https://{}.queue.core.windows.net/{}'.format(self.account, name)
-        return await self.session.delete(uri, headers=self._sign_for_queues("DELETE", canon))
+        uri = 'https://{}.blob.core.windows.net/{}?restype=container'.format(self.account, name)
+        return await self.session.delete(uri, headers=self._sign_for_blobs("DELETE", canon))
 
+    async def listBlobs(self, name):
+        canon = '/{}/{}'.format(self.account, name)
+        uri = 'https://{}.blob.core.windows.net/{}?restype=container&comp=list'.format(self.account, name)
+        res = await self.session.get(uri, headers=self._sign_for_blobs("GET", canon))
+        if res.status == 200:
+            for msg in cElementTree.fromstring(await res.text()):
+                yield {m.tag: m.text for m in msg}
 
-    async def putMessage(self, queue, payload, visibilitytimeout=None, messagettl=None):
-        """Queue a message"""
-        canon = '/{}/{}/messages'.format(self.account, queue)
-        base_uri = 'https://{}.queue.core.windows.net/{}/messages'.format(self.account, queue)
+    async def putBlob(self, container, payload):
+        """Upload a blob"""
+        canon = '/{}/{}/messages'.format(self.account, container)
+        base_uri = 'https://{}.blob.core.windows.net/{}/messages'.format(self.account, queue)
         query = {}
         if visibilitytimeout:
             query['visibilitytimeout'] = visibilitytimeout
@@ -85,33 +91,6 @@ class QueueClient:
         else:
             uri = base_uri
         payload="<QueueMessage><MessageText>{}</MessageText></QueueMessage>".format(payload)
-        return await self.session.post(uri, headers=self._sign_for_queues("POST", canon, payload), data=payload)
-        # TODO: handle receipts
-    
+        return await self.session.post(uri, headers=self._sign_for_blobs("POST", canon, payload), data=payload)
 
-    async def getMessages(self, queue, visibilitytimeout=None, numofmessages=None):
-        """Retrieve messages"""
-        canon = '/{}/{}/messages'.format(self.account, queue)
-        base_uri = 'https://{}.queue.core.windows.net/{}/messages'.format(self.account, queue)
-        query = {}
-        if visibilitytimeout:
-            query['visibilitytimeout'] = visibilitytimeout
-        if numofmessages:
-            query['numofmessages'] = numofmessages
-        if len(query.keys()):
-            uri = base_uri + '?' + urlencode(query)
-        else:
-            uri = base_uri
-        res = await self.session.get(uri, headers=self._sign_for_queues("GET", canon))
-        if res.status == 200:
-            for msg in cElementTree.fromstring(await res.text()):
-                yield {m.tag: m.text for m in msg}
-
-
-    async def deleteMessage(self, queue, messageid, popreceipt):
-        """Delete a message"""
-        canon = '/{}/{}/messages/{}'.format(self.account, queue, messageid)
-        base_uri = 'https://{}.queue.core.windows.net/{}/messages/{}'.format(self.account, queue, messageid)
-        query = {'popreceipt': popreceipt}
-        uri = base_uri + '?' + urlencode(query)
-        return await self.session.delete(uri, headers=self._sign_for_queues("DELETE", canon))
+   # https://docs.microsoft.com/en-us/rest/api/storageservices/list-blobs 

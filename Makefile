@@ -10,3 +10,6 @@ tables:
 
 queues:
 	python -u test_queues.py
+
+blobs:
+	python -u test_blobs.py
