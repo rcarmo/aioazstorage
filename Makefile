@@ -11,5 +11,11 @@ tables:
 queues:
 	python -u test_queues.py
 
+containers:
+	python -u test_blobs.py containers
+
 blobs:
-	python -u test_blobs.py
+	python -u test_blobs.py blobs
+
+deps:
+	pip install -U -r requirements.txt
