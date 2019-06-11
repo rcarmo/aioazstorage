@@ -1,2 +1,2 @@
-aiohttp
-ujson
+aiohttp>=3.5.4
+ujson>=1.35
