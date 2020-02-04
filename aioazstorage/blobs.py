@@ -76,7 +76,6 @@ class BlobClient:
         return await self.session.delete(uri, headers=self._sign_for_blobs("DELETE", canon))
 
     async def listContainers(self):
-        canon = '/{}/'.format(self.account)
         canon = ''
         uri = 'https://{}.blob.core.windows.net/?comp=list'.format(self.account)
         print(self._sign_for_blobs("GET", canon))
