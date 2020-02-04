@@ -2,12 +2,10 @@ from aiohttp import ClientSession
 from asyncio import sleep
 from base64 import b64encode, b64decode
 from datetime import datetime
-from dateutil import parser
 from email.utils import formatdate
 from hashlib import sha256, md5
 from hmac import HMAC
-from time import time, mktime
-from urllib.parse import urlencode, quote_plus, quote
+from urllib.parse import urlencode
 from uuid import uuid1, UUID
 try:
     from ujson import dumps, loads
