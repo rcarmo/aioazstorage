@@ -2,18 +2,14 @@ from aiohttp import ClientSession
 from asyncio import sleep
 from base64 import b64encode, b64decode
 from datetime import datetime
-from dateutil import parser
 from email.utils import formatdate
 from hashlib import sha256, md5
 from hmac import HMAC
-from time import time, mktime
-from urllib.parse import urlencode, quote_plus, quote
-from uuid import uuid1, UUID
 from xml.etree import cElementTree
 try:
-    from ujson import dumps, loads
+    from ujson import dumps
 except ImportError:
-    from json import dumps, loads
+    from json import dumps
 
 class BlobClient:
     account = None
@@ -40,7 +36,6 @@ class BlobClient:
         return {
             'x-ms-date': date,
             'x-ms-version': '2018-03-28',
-            'Content-Type': 'text/plain; charset=UTF-8',
             'Content-Type': 'application/octet-stream',
             'Connection': 'Keep-Alive'
         }
