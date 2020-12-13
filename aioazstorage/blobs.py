@@ -8,6 +8,7 @@ from hmac import HMAC
 from xml.etree import cElementTree
 from typing import Generator
 from logging import getLogger, basicConfig
+from os import environ
 try:
     from ujson import dumps
 except ImportError:
@@ -15,8 +16,7 @@ except ImportError:
 
 log = getLogger(__name__)
 basicConfig(format = 'time=%(asctime)s loc=%(funcName)s:%(lineno)d msg="%(message)s"',
-            level  = environ.get('LOGLEVEL','DEBUG')
-
+            level  = environ.get('LOGLEVEL','DEBUG'))
 
 class BlobClient:
     account = None
@@ -78,7 +78,7 @@ class BlobClient:
         return await self.session.delete(uri, headers=self._sign_for_blobs("DELETE", canon))
 
 
-    async def listContainers(self, marker=None) -> Iterator[dict]:
+    async def listContainers(self, marker=None) -> Generator[dict, None, None]:
         canon = f'/{self.account}/?comp=list'
         if marker is None:
             uri = f'https://{self.account}.blob.core.windows.net/?comp=list'
@@ -87,12 +87,13 @@ class BlobClient:
 
         res = await self.session.get(uri, headers=self._sign_for_blobs("GET", canon))
         if res.ok:
-            doc = cElementTree.fromstring(res.text.encode('utf-8'))
-            for container in doc.findall("//Container"):
+            log.debug(res.status)
+            doc = cElementTree.fromstring(await res.text())
+            for container in doc.findall(".//Container"):
                 item = {
                     "name": container.find("Name").text
                 }
-                for prop in container.findall("./Properties/*"):
+                for prop in container.findall(".//Properties/*"):
                     if prop.tag in ["Creation-Time","Last-Modified","Etag","Content-Length","Content-Type","Content-Encoding","Content-MD5","Cache-Control"]:
                         if prop.tag in ["Last-Modified", "DeletedTime"]:
                             item[prop.tag.lower()] = parsedate_to_datetime(prop.text)
@@ -104,27 +105,27 @@ class BlobClient:
                 if tag.text:
                     del res
                     del doc
-                    for item in self.listContainers(tag.text):
+                    async for item in self.listContainers(tag.text):
                         yield item
         else:
             log.error(res.status)
             log.error(await res.text())
 
 
-    async def listBlobs(self, container_name, marker=None) -> Iterator[dict]:
+    async def listBlobs(self, container_name, marker=None) -> Generator[dict, None, None]:
         canon = f'/{self.account}/{container_name}?comp=list'
         if marker is None:
             uri = f'https://{self.account}.blob.core.windows.net/{container_name}?restype=container&comp=list&include=metadata'
         else:
             uri = f'https://{self.account}.blob.core.windows.net/{container_name}?restype=container&comp=list&include=metadata&marker={marker}'
-        res = self.session.get(uri, headers=self._sign_for_blobs("GET", canon))
+        res = await self.session.get(uri, headers=self._sign_for_blobs("GET", canon))
         if res.ok:
-            doc = cElementTree.fromstring(res.text.encode('utf-8'))
-            for blob in doc.findall("//Blob"):
+            doc = cElementTree.fromstring(await res.text())
+            for blob in doc.findall(".//Blob"):
                 item = {
                     "name": blob.find("Name").text
                 }
-                for prop in blob.findall("./Properties/*"):
+                for prop in blob.findall(".//Properties/*"):
                     if prop.tag in ["AccessTier","Creation-Time","Last-Modified","Etag","Content-Length","Content-Type","Content-Encoding","Content-MD5","Cache-Control"] and prop.text:
                         if prop.tag in ["Last-Modified", "Creation-Time"]:
                             item[prop.tag.lower()] = parsedate_to_datetime(prop.text)
@@ -140,7 +141,7 @@ class BlobClient:
                 if tag.text:
                     del res
                     del doc
-                    for item in self.listBlobs(container_name, tag.text):
+                    async for item in self.listBlobs(container_name, tag.text):
                         yield item
         else:
             log.error(res.status)
@@ -166,6 +167,5 @@ class BlobClient:
             'x-ms-access-tier': tier 
         }
         return await self.session.put(uri, headers=self._sign_for_blobs("PUT", canon, headers))
-)
 
    # https://docs.microsoft.com/en-us/rest/api/storageservices/list-blobs 

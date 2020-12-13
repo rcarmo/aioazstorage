@@ -15,7 +15,7 @@ containers:
 	python -u test_blobs.py containers
 
 blobs:
-	python -u test_blobs.py blobs
+	python -u test_blobs.py containers blob_write list_blobs
 
 deps:
 	pip install -U -r requirements.txt
